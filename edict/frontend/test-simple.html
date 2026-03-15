@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>2026年用量日历</title>
+  <style>
+    body { background: #0f172a; color: #fff; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    h1 { text-align: center; padding: 20px; margin: 0; color: #fff; }
+    .calendar-wrapper {
+      width: 551px;
+      height: 647px;
+      padding: 20px 24px;
+      margin: 0 auto;
+      background: #1D2839;
+      border-radius: 12px;
+      overflow-y: auto;
+    }
+    .month-container { margin-bottom: 10px; }
+    .month-title { text-align: center; font-size: 18px; font-weight: 900; margin-bottom: 10px; color: #fff; }
+    table { width: 100%; max-width: 600px; margin: 0 auto; border-collapse: collapse; }
+    td { height: 50px; width: calc(100% / 7); text-align: center; vertical-align: middle; }
+    .weekday { color: #94a3b8; font-size: 14px; font-weight: 600; }
+    .day { background: transparent; color: #666; }
+    .day.has-data { color: #fff; cursor: default; }
+    .day-number { font-size: 15px; font-weight: 600; }
+    .day-tokens { font-size: 10px; font-weight: 600; opacity: 0.8; }
+    
+    /* 滚动条 */
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.03); border-radius: 2px; }
+    ::-webkit-scrollbar-thumb { 
+      background: linear-gradient(180deg, #3b82f6, #8b5cf6);
+      border-radius: 2px; 
+    }
+    ::-webkit-scrollbar-thumb:hover { 
+      background: linear-gradient(180deg, #60a5fa, #a78bfa); 
+    }
+  </style>
+</head>
+<body>
+  <h1>2026年 Token 用量</h1>
+  <div class="calendar-wrapper">
+    <div id="calendar-container"></div>
+  </div>
+
+<script>
+function renderCalendar(year, month, dailyData) {
+  const container = document.createElement('div');
+  container.className = 'month-container';
+  
+  const monthNames = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
+  const title = document.createElement('div');
+  title.className = 'month-title';
+  title.textContent = year + '年 ' + monthNames[month];
+  container.appendChild(title);
+  
+  const table = document.createElement('table');
+  
+  // 星期标题
+  const thead = document.createElement('tr');
+  ['日', '一', '二', '三', '四', '五', '六'].forEach(d => {
+    const th = document.createElement('td');
+    th.className = 'weekday';
+    th.textContent = d;
+    thead.appendChild(th);
+  });
+  table.appendChild(thead);
+  
+  // 当月所有数据
+  const monthData = dailyData.filter(d => {
+    const dMonth = parseInt(d.date.split('-')[1]) - 1;
+    return dMonth === month;
+  });
+  
+  const colors = ['transparent', '#e5e7eb', '#F8ACBF', '#F47495'];
+  
+  // 计算阈值（只考虑有token的）
+  const tokensWithData = monthData.filter(d => d.tokens > 0).map(d => d.tokens);
+  
+  let q1, q2, q3;
+  if (tokensWithData.length > 0) {
+    const max = Math.max(...tokensWithData);
+    const min = Math.min(...tokensWithData);
+    const range = max - min;
+    q1 = min + range * 0.25;
+    q2 = min + range * 0.5;
+    q3 = min + range * 0.75;
+  } else {
+    q1 = q2 = q3 = 0;
+  }
+  
+  // 构建日历
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  
+  let cells = [];
+  // 填充空白
+  for (let i = 0; i < firstDay; i++) {
+    const td = document.createElement('td');
+    td.className = 'day';
+    cells.push(td);
+  }
+  
+  // 填入日期
+  for (let day = 1; day <= daysInMonth; day++) {
+    const td = document.createElement('td');
+    td.className = 'day';
+    
+    const dateStr = year + '-' + String(month+1).padStart(2,'0') + '-' + String(day).padStart(2,'0');
+    const dayData = monthData.find(d => d.date === dateStr);
+    const t = dayData ? dayData.tokens : 0;
+    
+    if (t > 0) {
+      td.className = 'day has-data';
+      let colorIdx = 0;
+      if (t >= q3) colorIdx = 3;
+      else if (t >= q2) colorIdx = 2;
+      else if (t >= q1) colorIdx = 1;
+      td.style.backgroundColor = colors[colorIdx];
+      // #F47495和透明是白字，其他2档是黑字
+      const textColor = (colorIdx === 3 || colorIdx === 0) ? '#fff' : '#000';
+      td.innerHTML = '<div class="day-number" style="color:' + textColor + '">' + day + '</div><div class="day-tokens" style="color:' + textColor + '">' + (t/1000000).toFixed(1) + 'M</div>';
+    } else {
+      td.style.backgroundColor = 'transparent';
+      td.innerHTML = '<div class="day-number" style="color:#fff">' + day + '</div><div class="day-tokens" style="color:#fff"> </div>';
+    }
+    
+    cells.push(td);
+    
+    if ((firstDay + day) % 7 === 0) {
+      const tr = document.createElement('tr');
+      cells.forEach(c => tr.appendChild(c));
+      table.appendChild(tr);
+      cells = [];
+    }
+  }
+  
+  // 最后一行
+  if (cells.length > 0) {
+    while (cells.length < 7) {
+      const td = document.createElement('td');
+      td.className = 'day';
+      cells.push(td);
+    }
+    const tr = document.createElement('tr');
+    cells.forEach(c => tr.appendChild(c));
+    table.appendChild(tr);
+  }
+  
+  container.appendChild(table);
+  return container;
+}
+
+function loadData() {
+  fetch('/api/usage-cost')
+    .then(r => r.json())
+    .then(d => {
+      const container = document.getElementById('calendar-container');
+      container.innerHTML = '';
+      
+      const now = new Date();
+      const currentYear = now.getFullYear();
+      const currentMonth = now.getMonth();
+      
+      for (let month = 0; month <= currentMonth; month++) {
+        const monthEl = renderCalendar(currentYear, month, d.daily || []);
+        container.appendChild(monthEl);
+      }
+      
+      setTimeout(() => {
+        const wrapper = document.querySelector('.calendar-wrapper');
+        if (wrapper) wrapper.scrollTop = wrapper.scrollHeight;
+      }, 100);
+    })
+    .catch(e => {
+      console.error('错误:', e);
+    });
+}
+
+loadData();
+setInterval(loadData, 30000);
+</script>
+</body>
+</html>

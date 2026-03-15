@@ -1,0 +1,1062 @@
+/* ==========================================================================
+   说明：本文件完全基于 Tailwind CSS 构建，并辅以自定义 CSS 变量和组件样式
+   ========================================================================== */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ==========================================================================
+   CSS 变量定义 (Design Tokens)
+   用于统一管理主题色、背景色、文字颜色等，便于后续维护和主题切换
+   ========================================================================== */
+:root {
+  /* --- 基础配色 --- */
+  --bg-color: #0f172a;       /* 深蓝背景色 (Slate 900) */
+  --text-main: #f8fafc;      /* 主要文字颜色 (Slate 50) */
+  --text-sub: #94a3b8;       /* 次要文字颜色 (Slate 400) */
+  --text-dim: #cbd5e1;       /* 弱化文字颜色 (Slate 300) */
+  --border-light: rgba(255, 255, 255, 0.1); /* 浅色边框 */
+  
+  /* --- 面板背景 (毛玻璃效果基础) --- */
+  --panel-bg: rgba(30, 41, 59, 0.85);   /* 半透明深色背景 */
+  --panel-card: rgba(55, 60, 75, 0.65); /* 卡片层级背景 */
+
+  /* --- 状态指示色 (参考 monitor.html 变量定义) --- */
+  --color-online: #10b981;   /* 在线 - 绿色 */
+  --color-busy: #fbbf24;     /* 忙碌 - 黄色 */
+  --color-idle: #06b6d4;     /* 空闲 - 青色 */
+  --color-offline: #6b7280;  /* 离线 - 灰色 */
+  
+  /* --- 功能色 --- */
+  --color-accent: #3b82f6;   /* 主强调色 (蓝色) */
+  --color-accent-2: #8b5cf6; /* 次强调色 (紫色) */
+  --color-success: #10b981;  /* 成功 */
+  --color-warning: #f59e0b;  /* 警告 */
+  --color-error: #ef4444;    /* 错误 */
+}
+
+/* 全局重置 */
+* { 
+  box-sizing: border-box; 
+  margin: 0; 
+  padding: 0; 
+}
+
+body {
+  background-color: var(--bg-color);
+  color: var(--text-main);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  overflow: hidden; /* 禁止 body 滚动，滚动由内部容器处理 */
+  height: 100vh;
+  width: 100vw;
+  -webkit-font-smoothing: antialiased; /* 字体抗锯齿 */
+}
+
+/* ==========================================================================
+   滚动条样式定制
+   参考：monitor.html (行 105-107)
+   效果：蓝紫色渐变滚动条，悬停变亮
+   ========================================================================== */
+::-webkit-scrollbar { 
+  width: 4px; 
+  height: 4px; 
+}
+
+::-webkit-scrollbar-track { 
+  background: rgba(255, 255, 255, 0.03); 
+  border-radius: 2px; 
+}
+
+::-webkit-scrollbar-thumb { 
+  background: linear-gradient(180deg, #3b82f6, #8b5cf6); /* 蓝紫渐变 */
+  border-radius: 2px; 
+}
+
+::-webkit-scrollbar-thumb:hover { 
+  background: linear-gradient(180deg, #60a5fa, #a78bfa); /* 悬停高亮 */
+}
+
+/* ==========================================================================
+   主容器 (.wrap)
+   参考：monitor.html (.container)
+   布局：填满视口，左右留白 120px，上下 20px
+   背景：双层径向光晕效果
+   ========================================================================== */
+.wrap {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  padding: 20px 120px 20px 120px;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box; /* padding 计入总高度 */
+  z-index: 10;
+  /* 背景光晕 - 严格匹配 HTML radial-gradient */
+  background:
+    radial-gradient(circle at 20% 80%, rgba(59, 130, 246, 0.15) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(139, 92, 246, 0.1) 0%, transparent 50%);
+}
+
+/* ==========================================================================
+   头部区域 (.hdr)
+   参考：monitor.html (行 52+)
+   包含：大标题 (h1) + 统计胶囊导航 (.hdr-stats)
+   ========================================================================== */
+.hdr {
+  text-align: center;
+  padding: 50px 0; /* 上下间距 50px */
+  flex-shrink: 0;
+  gap: 50px; /* 标题与统计栏间距 */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* 主标题：80px 大字，大写，阴影 */
+.hdr h1 {
+  font-size: 80px;
+  font-weight: 700;
+  font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+  color: var(--text-main);
+  margin: 0;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+}
+
+/* ==========================================================================
+   统计导航栏 (.hdr-stats)
+   参考：monitor.html (.stats-container, 行 60-70)
+   效果：磨砂玻璃背景，圆角胶囊状，内部包含多个统计项
+   ========================================================================== */
+.hdr-stats {
+  display: inline-flex; /* 配合父级 text-align 居中 */
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%; 
+  max-width: 1200px; /* 最大宽度限制 */
+  background: rgba(128, 128, 128, 0.3);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  padding: 8px 12px;
+  border-radius: 50px;
+  border: none;
+}
+
+/* 统计胶囊单项 (.stat-pill)
+   参考：monitor.html (行 65-73)
+   效果：深色渐变背景，内阴影，悬停上浮
+*/
+.stat-pill {
+  flex: 1; /* 平均分配空间 */
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 60px; 
+  padding: 0 10px;
+  border-radius: 40px;
+  background: linear-gradient(180deg, #151922 0%, #0d1017 100%);
+  box-shadow: 
+    0 4px 6px rgba(0, 0, 0, 0.3), 
+    0 2px 4px rgba(0, 0, 0, 0.2), 
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  transition: all 0.3s ease;
+}
+
+/* 悬停效果：背景变亮，向上位移，阴影加深 */
+.stat-pill:hover {
+  background: linear-gradient(180deg, #1a1f2e 0%, #12151c 100%);
+  transform: translateY(-2px);
+  box-shadow: 
+    0 6px 12px rgba(0, 0, 0, 0.4), 
+    0 3px 6px rgba(0, 0, 0, 0.3), 
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+/* 垂直布局模式：用于 Token 日历按钮等 */
+.stat-pill.vertical {
+  justify-content: center;
+  flex-direction: column;
+  gap: 0px;
+}
+
+.stat-pill.vertical span { 
+  margin-bottom: -3px;
+  margin-left: 0;
+}
+
+/* 统计文字标签 (.stat-text) */
+.stat-pill label {
+  font-size: 11px;
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+/* 统计数字 (.stat-num) */
+.stat-pill span {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-left: 6px;
+}
+
+/* ==========================================================================
+   主网格布局 (.main-grid)
+   参考：monitor.html (.dashboard, 行 77+)
+   结构：三栏布局 [监督日志] [工作状态+排行] [事件流]
+   比例：0.8fr : 2.4fr : 0.8fr (最小 280px)
+   ========================================================================== */
+.main-grid {
+  display: grid;
+  /* 严格复刻列宽比例 */
+  grid-template-columns: minmax(280px, 0.8fr) 2.4fr minmax(280px, 0.8fr);
+  gap: 20px;
+  flex: 1; 
+  min-width: 100px;
+  min-height: 0; /* 允许内部滚动 */
+  overflow: hidden;
+}
+
+/* ==========================================================================
+   通用卡片容器 (.card)
+   参考：monitor.html (.card, 行 86-96)
+   用途：左中右三栏的所有内容板块
+   效果：磨砂玻璃背景，圆角，内阴影
+   ========================================================================== */
+.card {
+  background: var(--panel-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 18px;
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  border: none;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+  min-height: 0;
+  flex: 1; 
+  min-width: 100px;
+}
+
+/* 卡片头部：标题 + 时间戳 */
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border-light);
+  flex-shrink: 0;
+}
+
+/* 卡片主标题 (20px) */
+.card-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* 卡片副标题 (11px, 灰色) */
+.card-subtitle {
+  font-size: 11px;
+  color: var(--text-sub);
+  margin-top: 8px;
+}
+
+/* 更新时间戳 (.update-time) */
+.card-time {
+  font-size: 13px;
+  color: var(--text-sub);
+  font-weight: 500;
+  align-self: flex-end;
+  margin-bottom: 2px;
+}
+
+/* 卡片内容区：占据剩余空间，隐藏溢出 */
+.card-body {
+  flex: 1; 
+  min-width: 100px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 可滚动内容容器通用样式 */
+.scroll-content, .timeline-content, .ranking-container {
+  flex: 1; 
+  min-width: 100px;
+  overflow-y: auto;
+  padding-right: 5px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px; /* 列表项间距 */
+  padding: 10px;
+}
+
+/* ==========================================================================
+   时间轴/日志条目 (.timeline-item)
+   参考：monitor.html (.timeline-item, 行 109-120)
+   特征：左侧蓝色竖线 + 双层圆点装饰
+   ========================================================================== */
+.timeline-item {
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  border-left: 3px solid #3b82f6; /* 蓝色左边框 */
+  border: none;
+  position: relative;
+  transition: all 0.3s ease;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* 伪元素 ::before - 外圈浅蓝圆点 */
+.timeline-item::before {
+  content: '';
+  position: absolute;
+  left: -10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 18px;
+  height: 18px;
+  background: rgba(59, 130, 246, 0.3);
+  border-radius: 50%;
+}
+
+/* 伪元素 ::after - 内圈实心深蓝点 */
+.timeline-item::after {
+  content: '';
+  position: absolute;
+  left: -6px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 10px;
+  height: 10px;
+  background: var(--color-accent);
+  border-radius: 50%;
+}
+
+/* 悬停效果：背景变亮，向右微移 */
+.timeline-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  transform: translateX(4px);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+/* 日志文本样式 */
+.tl-time { font-size: 13px; color: var(--text-sub); margin-bottom: 8px; }
+.tl-title { font-size: 14px; font-weight: 600; color: var(--text-main); margin-bottom: 8px; }
+.tl-desc { font-size: 12px; color: var(--text-dim); line-height: 1.6; word-break: break-all; overflow-wrap: break-word; }
+.tl-highlight { color: #f59e0b; font-weight: 500; font-size: 13px; } /* 高亮 Agent 名 */
+
+/* ==========================================================================
+   Agent 网格卡片 (.agent-grid & .agent-card)
+   用途：工作状态区域，展示 6 个 Agent 的实时状态
+   布局：3 列网格
+   ========================================================================== */
+.agent-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr); /* 3 列均分 */
+  gap: 12px;
+  padding: 10px;
+  overflow: hidden;
+  max-height: 420px;
+  align-content: start;
+}
+
+/* Agent 卡片容器 */
+.agent-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  height: 90px;
+  padding: 16px 12px;
+  background: rgba(55, 60, 75, 0.65);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 12px;
+  box-shadow:
+    0 0 12px rgba(0, 0, 0, 0.35),
+    0 0 6px rgba(0, 0, 0, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+/* 悬停效果 */
+.agent-card:hover {
+  background: rgba(65, 70, 85, 0.75);
+  transform: translateY(-2px);
+  box-shadow: 
+    0 0 16px rgba(0, 0, 0, 0.4),
+    0 0 8px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+/* 左侧区域：头像 + 信息 */
+.ac-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1; 
+  min-width: 100px;
+  min-width: 0; /* 防止文本溢出撑开 */
+}
+
+/* 头像占位 (实际由 SVG 组件渲染) */
+.ac-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+/* 信息列 */
+.ac-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow: hidden;
+}
+
+/* 名字行：名字 + 状态标签 */
+.ac-name-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ac-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 状态标签 (小圆角边框) */
+.ac-status {
+  font-size: 9px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 10px;
+  white-space: nowrap;
+  border: 1px solid;
+}
+
+/* 状态颜色修饰类 */
+.status-online { color: var(--color-online); border-color: var(--color-online); }
+.status-busy { color: var(--color-busy); border-color: var(--color-busy); }
+.status-idle { color: var(--color-idle); border-color: var(--color-idle); }
+.status-offline { color: var(--color-offline); border-color: var(--color-offline); }
+
+/* 角色描述 */
+.ac-role {
+  font-size: 12px;
+  color: var(--text-sub);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 右侧：任务计数 */
+.ac-task-count {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+/* 任务数字 (白色背景蓝宇) */
+.ac-task-count > span:first-child {
+  background-color: #fff;
+  color: #007aff;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 20px;
+}
+
+/* "会话" 文字 */
+.ac-task-count > span:last-child {
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* 事件流中的特殊高亮 (如 JJC-ID, Gateway) */
+.ev-highlight { 
+  color: #f472b6; 
+  font-weight: 600; 
+  font-size: 12px;
+}
+
+/* ==========================================================================
+   段位排名 (.ranking-item)
+   效果：进度条背景 + 绝对定位文字 + 右侧分数
+   ========================================================================== */
+.ranking-item {
+  display: flex;
+  align-items: center;
+  height: 32px;
+}
+
+.rank-bar-wrap {
+  flex-grow: 1;
+  height: 32px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  position: relative;
+  overflow: visible; /* 允许文字溢出显示 */
+}
+
+/* 进度条填充 (蓝紫渐变) */
+.rank-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+  border-radius: 16px;
+  position: absolute;
+  left: 0;
+  top: 0;
+  transition: width 1s ease-out; /* 加载动画 */
+}
+
+/* 排名文字 (绝对定位在进度条上方) */
+.rank-text {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-main);
+  white-space: nowrap;
+  z-index: 1;
+}
+
+/* 分数 (右侧独立列) */
+.rank-score {
+  width: 60px;
+  text-align: right;
+  font-size: 16px;
+  font-weight: 800;
+  color: #3b82f6;
+  margin-left: 8px;
+}
+
+/* ==========================================================================
+   实时事件流 (.event-item)
+   参考：monitor.html (.event-card, 行 122-140)
+   特征：左侧彩色竖条区分类型，右上角徽章
+   ========================================================================== */
+.event-item {
+  padding: 12px 16px 12px 32px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  margin-bottom: 4px;
+}
+
+/* 右上角类型徽章 */
+.ev-tag {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  font-size: 10px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+/* 事件文本样式 */
+.ev-time { font-size: 13px; color: var(--text-sub); font-weight: 500; }
+.ev-title { font-size: 14px; font-weight: 600; color: var(--text-main); margin: 4px 0; }
+.ev-desc { font-size: 13px; color: var(--text-dim); line-height: 1.6; word-break: break-all; overflow-wrap: break-word; }
+
+/* 详细事件条目样式 (带左侧色条) */
+.event-item, .ev-item {
+  padding: 12px 16px 12px 36px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  position: relative;
+  transition: all 0.3s ease;
+  border: 1px solid var(--border-light);
+  margin-bottom: 0px;
+}
+
+/* 伪元素 ::before - 左侧彩色竖条 (默认蓝色) */
+.event-item::before, .ev-item::before {
+  content: '';
+  position: absolute;
+  left: 16px;
+  top: 16px;
+  bottom: 16px;
+  width: 4px;
+  border-radius: 2px;
+  background: var(--color-accent);
+}
+
+/* 不同类型事件的竖条颜色 */
+.event-item.warning::before, .ev-item.warning::before { background: var(--color-busy); }
+.event-item.error::before, .ev-item.error::before { background: var(--color-error); }
+.event-item.success::before, .ev-item.success::before { background: var(--color-success); }
+
+/* 悬停效果 */
+.event-item:hover, .ev-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  transform: translateX(4px);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+/* 徽章背景色定义 */
+.ev-tag.info, .badge-info {
+  background: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.4);
+}
+
+.ev-tag.success, .badge-success {
+  background: rgba(16, 185, 129, 0.2);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.4);
+}
+
+.ev-tag.warning, .badge-warning {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.4);
+}
+
+.ev-tag.error, .badge-error {
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+}
+
+/* ==========================================================================
+   页脚 (.footer)
+   ========================================================================== */
+.footer {
+  text-align: center;
+  height: 60px; 
+  padding: 0 10px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+/* ==========================================================================
+   详情面板 (Modal) - 右侧滑出
+   用于展示 Agent 详细信息及工作区文件
+   ========================================================================== */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+  z-index: 999;
+}
+
+.modal-overlay.open {
+  opacity: 1;
+  visibility: visible;
+}
+
+.modal-panel {
+  position: fixed;
+  top: 50%;
+  left: 0;
+  transform: translate(-100%, -50%); /* 初始隐藏在左侧屏幕外 */
+  width: 600px;
+  height: 800px;
+  background: rgba(30, 41, 59, 0.95);
+  backdrop-filter: blur(30px);
+  -webkit-backdrop-filter: blur(30px);
+  border-right: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 0 20px 20px 0;
+  box-shadow: 10px 0 40px rgba(0, 0, 0, 0.4);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.3s ease;
+}
+
+.modal-panel.open {
+  transform: translate(0, -50%); /* 滑入视野 */
+}
+
+.mp-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(55, 60, 75, 0.65);
+  border-radius: 0 20px 0 0;
+}
+
+.mp-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: #cbd5e1;
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mp-body {
+  flex: 1; 
+  min-width: 100px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  overflow: hidden;
+}
+
+.mp-section {
+  margin-top: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 16px;
+  overflow: auto;
+}
+
+.mp-section:first-child {
+  margin-top: 0;
+}
+
+/* 信息行布局 */
+.info-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.info-label {
+  font-size: 14px;
+  color: var(--text-sub);
+  width: 80px;
+  flex-shrink: 0;
+}
+
+.info-value {
+  font-size: 13px;
+  color: var(--text-main);
+  font-weight: 500;
+  word-break: break-all;
+  text-align: right;
+  flex: 1; 
+  min-width: 100px;
+}
+
+/* 加载动画 */
+@keyframes spin { 
+  to { transform: rotate(360deg); } 
+}
+
+.loading-spinner {
+  width: 50px;
+  height: 50px;
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  border-top-color: #667eea;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 20px;
+}
+
+/* 状态工具类复用 */
+.status-online { color: var(--color-online); border-color: var(--color-online); }
+.status-busy { color: var(--color-busy); border-color: var(--color-busy); }
+.status-idle { color: var(--color-idle); border-color: var(--color-idle); }
+.status-offline { color: var(--color-offline); border-color: var(--color-offline); }
+
+.bg-info { background: rgba(59, 130, 246, 0.2); border-color: rgba(59, 130, 246, 0.4); color: #60a5fa; }
+.bg-success { background: rgba(16, 185, 129, 0.2); border-color: rgba(16, 185, 129, 0.4); color: #34d399; }
+.bg-warning { background: rgba(245, 158, 11, 0.2); border-color: rgba(245, 158, 11, 0.4); color: #fbbf24; }
+.bg-error { background: rgba(239, 68, 68, 0.2); border-color: rgba(239, 68, 68, 0.4); color: #f87171; }
+
+/* ==========================================================================
+   文件详情面板内部布局
+   强制横向排列：左侧文件列表 + 右侧内容预览
+   ========================================================================== */
+.file-panel-body {
+  flex-direction: row !important;
+  gap: 20px !important;
+  overflow: hidden;
+}
+
+/* 左侧文件列表 */
+.mp-file-list {
+  width: 200px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+  padding-right: 5px;
+}
+
+/* 文件卡片项 */
+.file-card {
+  width: 100%;
+  padding: 16px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2px;
+  border: 1px solid transparent;
+}
+
+.file-card:hover {
+  background: rgba(255, 255, 255, 0.08);
+  transform: translateY(-2px);
+}
+
+/* 激活状态 */
+.file-card.active {
+  background: linear-gradient(180deg, #151922 0%, #0d1017 100%);
+  border-color: rgba(59, 130, 246, 0.4);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* 禁用/加载状态 */
+.file-card.disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.file-label {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.file-card.disabled .file-label {
+  color: var(--text-sub);
+}
+
+.file-name {
+  font-size: 12px;
+  color: var(--text-sub);
+}
+
+/* 右侧文件内容区 */
+.mp-file-content {
+  flex: 1; 
+  min-width: 100px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.content-header {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.content-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.content-desc {
+  font-size: 14px;
+  color: var(--text-sub);
+}
+
+.content-divider {
+  width: 100%;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.content-display {
+  flex: 1; 
+  min-width: 100px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 16px;
+  overflow: auto;
+}
+
+.content-display pre {
+  white-space: pre-wrap;
+  word-break: break-all;
+  margin: 0;
+  font-family: Consolas, 'Courier New', monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-dim);
+}
+
+/* Token 用量日历标签 - 加大加粗 */
+.token-calendar-label {
+  font-size: 18px !important;
+  font-weight: 700 !important;
+  color: #fff !important;
+}
+
+/* ==========================================================================
+   日历侧边面板 (左侧滑出)
+   结构与 Modal 类似，但方向相反
+   ========================================================================== */
+.left-panel {
+  left: 0 !important;
+  right: auto !important;
+  transform: translateX(-100%) !important;
+  border-radius: 0 16px 16px 0 !important;
+}
+
+.left-panel.open {
+  transform: translateX(0) !important;
+}
+
+/* 日历遮罩层 */
+.calendar-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+  z-index: 1000;
+}
+
+.calendar-overlay.open {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* 日历面板主体 */
+.calendar-panel {
+  position: fixed;
+  top: 50%;
+  left: 0;
+  transform: translate(-100%, -50%);
+  width: 600px;
+  height: 800px;
+  background: rgba(30, 41, 59, 0.95);
+  backdrop-filter: blur(30px);
+  -webkit-backdrop-filter: blur(30px);
+  border-right: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 0 20px 20px 0;
+  box-shadow: 10px 0 40px rgba(0, 0, 0, 0.4);
+  z-index: 1001;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.3s ease;
+}
+
+.calendar-panel.open {
+  transform: translate(0, -50%);
+}
+
+.calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(55, 60, 75, 0.65);
+  border-radius: 0 20px 0 0;
+}
+
+.calendar-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.calendar-subtitle {
+  font-size: 13px;
+  color: #94a3b8;
+  margin-top: 4px;
+}
+
+.calendar-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: #cbd5e1;
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.calendar-close:hover {
+  background: rgba(255,255,255,0.1);
+  color: #fff;
+}
+
+/* 日历内容滚动区 - 关键优化 */
+.calendar-body {
+  flex: 1;
+  /* 1. 右侧留出滚动条空间，底部留出余量防止圆角溢出 */
+  padding: 20px 12px 25px 20px; 
+  overflow-y: auto;
+  overflow-x: hidden; 
+  
+  /* 2. 内部圆角匹配父容器 */
+  border-radius: 0 0 16px 0; 
+  
+  /* 3. 稳定滚动条布局，防止抖动 */
+  scrollbar-gutter: stable both-edges;
+}
+
+/* 日历滚动条定制 */
+.calendar-body::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.calendar-body::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 0 8px 8px 0;
+  margin: 5px 0PX 18px 0PX; /* 上下留空隙 */
+}
+
+.calendar-body::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #3b82f6, #8b5cf6);
+  border-radius: 4px;
+  /* 透明边框使滑块更圆润 */
+  border: 1px solid rgba(30, 41, 59, 0.5); 
+}
+
+.calendar-body::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #60a5fa, #a78bfa);
+}
