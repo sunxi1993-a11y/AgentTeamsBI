@@ -1,0 +1,5 @@
+{
+  "bot_token": "你的Telegram Bot Token",
+  "chat_id": "你的Telegram Chat ID (用户ID或群组ID)",
+  "enabled": true
+}

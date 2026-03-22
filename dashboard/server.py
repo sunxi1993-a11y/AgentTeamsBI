@@ -730,6 +730,123 @@ def push_to_feishu():
         print(f'[飞书] 推送失败: {e}', file=sys.stderr)
 
 
+def push_to_telegram(message=''):
+    """Push message to Telegram via Bot API."""
+    cfg = read_json(DATA / 'telegram_push_config.json', {})
+    bot_token = cfg.get('bot_token', '').strip()
+    chat_id = cfg.get('chat_id', '').strip()
+    
+    if not bot_token or not chat_id:
+        return {'ok': False, 'error': 'Telegram 未配置 (bot_token 或 chat_id 缺失)'}
+    
+    # 构建消息内容
+    if not message:
+        # 如果没有传入消息，使用早报摘要
+        brief = read_json(DATA / 'morning_brief.json', {})
+        date_str = brief.get('date', '')
+        total = sum(len(v) for v in (brief.get('categories') or {}).values())
+        
+        if date_str and total:
+            date_fmt = date_str[:4] + '年' + date_str[4:6] + '月' + date_str[6:] + '日' if len(date_str) == 8 else date_str
+            cat_lines = []
+            for cat, items in (brief.get('categories') or {}).items():
+                if items:
+                    cat_lines.append(f'  {cat}: {len(items)} 条')
+            summary = '\n'.join(cat_lines) if cat_lines else '暂无内容'
+            
+            message = (
+                f"📰 *天下要闻 · {date_fmt}*\n\n"
+                f"共 **{total}** 条要闻已更新\n\n"
+                f"{summary}\n\n"
+                f"🔗 [查看完整简报](http://127.0.0.1:7891)"
+            )
+        else:
+            message = "📋 三省六部看板更新通知"
+    
+    # 发送 Telegram 消息
+    try:
+        import urllib.request
+        import urllib.error
+        
+        url = f'https://api.telegram.org/bot{bot_token}/sendMessage'
+        payload = json.dumps({
+            'chat_id': chat_id,
+            'text': message,
+            'parse_mode': 'Markdown',
+            'disable_web_page_preview': False
+        }).encode('utf-8')
+        
+        req = Request(url, data=payload, headers={
+            'Content-Type': 'application/json',
+            'User-Agent': 'AgentTeamsBI/1.0'
+        })
+        resp = urlopen(req, timeout=15)
+        result = json.loads(resp.read().decode('utf-8'))
+        
+        if result.get('ok'):
+            print(f'[Telegram] 推送成功')
+            return {'ok': True, 'message': '推送成功'}
+        else:
+            print(f'[Telegram] 推送失败: {result.get("description", "未知错误")}')
+            return {'ok': False, 'error': result.get('description', '未知错误')}
+            
+    except urllib.error.HTTPError as e:
+        error_body = e.read().decode('utf-8') if e.fp else ''
+        print(f'[Telegram] HTTP错误 {e.code}: {error_body}', file=sys.stderr)
+        return {'ok': False, 'error': f'HTTP {e.code}: {error_body[:200]}'}
+    except Exception as e:
+        print(f'[Telegram] 推送失败: {e}', file=sys.stderr)
+        return {'ok': False, 'error': str(e)}
+
+
+def test_telegram_config():
+    """测试 Telegram 配置是否正确"""
+    cfg = read_json(DATA / 'telegram_push_config.json', {})
+    bot_token = cfg.get('bot_token', '').strip()
+    chat_id = cfg.get('chat_id', '').strip()
+    
+    if not bot_token:
+        return {'ok': False, 'error': 'bot_token 不能为空'}
+    if not chat_id:
+        return {'ok': False, 'error': 'chat_id 不能为空'}
+    
+    try:
+        import urllib.request
+        import urllib.error
+        
+        # 获取 Bot 信息
+        url = f'https://api.telegram.org/bot{bot_token}/getMe'
+        req = Request(url, headers={'User-Agent': 'AgentTeamsBI/1.0'})
+        resp = urlopen(req, timeout=10)
+        result = json.loads(resp.read().decode('utf-8'))
+        
+        if not result.get('ok'):
+            return {'ok': False, 'error': 'Bot Token 无效'}
+        
+        bot_name = result.get('result', {}).get('first_name', 'Unknown')
+        
+        # 验证 chat_id（支持用户ID或群组ID）
+        url = f'https://api.telegram.org/bot{bot_token}/getChat?chat_id={chat_id}'
+        req = Request(url, headers={'User-Agent': 'AgentTeamsBI/1.0'})
+        resp = urlopen(req, timeout=10)
+        chat_result = json.loads(resp.read().decode('utf-8'))
+        
+        if not chat_result.get('ok'):
+            return {'ok': False, 'error': f'chat_id 无效: {chat_result.get("description", "")}'}
+        
+        chat_name = chat_result.get('result', {}).get('title') or chat_result.get('result', {}).get('username', 'Unknown')
+        
+        return {
+            'ok': True,
+            'message': f'配置成功！Bot: @{bot_name}, 目标: {chat_name}'
+        }
+        
+    except urllib.error.HTTPError as e:
+        return {'ok': False, 'error': f'HTTP错误 {e.code}'}
+    except Exception as e:
+        return {'ok': False, 'error': str(e)}
+
+
 # 旨意标题最低要求
 _MIN_TITLE_LEN = 10
 _JUNK_TITLES = {
@@ -2883,6 +3000,13 @@ class Handler(BaseHTTPRequestHandler):
                 ],
                 'keywords': [], 'custom_feeds': [], 'feishu_webhook': '',
             }))
+        elif p == '/api/telegram-config':
+            # GET: 获取 Telegram 推送配置
+            self.send_json(read_json(DATA / 'telegram_push_config.json', {
+                'bot_token': '',
+                'chat_id': '',
+                'enabled': True
+            }))
         elif p.startswith('/api/morning-brief/'):
             date = p.split('/')[-1]
             # 标准化日期格式为 YYYYMMDD（兼容 YYYY-MM-DD 输入）
@@ -3140,10 +3264,60 @@ class Handler(BaseHTTPRequestHandler):
                         cmd.append('--force')
                     subprocess.run(cmd, timeout=120)
                     push_to_feishu()
+                    push_to_telegram()  # 同时推送到 Telegram
                 except Exception as e:
                     print(f'[refresh error] {e}', file=sys.stderr)
             threading.Thread(target=do_refresh, daemon=True).start()
             self.send_json({'ok': True, 'message': '采集已触发，约30-60秒后刷新'})
+            return
+
+        # ===== Telegram 推送配置 =====
+        if p == '/api/telegram-config':
+            # GET: 获取 Telegram 配置
+            cfg = read_json(DATA / 'telegram_push_config.json', {
+                'bot_token': '',
+                'chat_id': '',
+                'enabled': True
+            })
+            self.send_json({'ok': True, 'config': cfg})
+            return
+
+        if p == '/api/telegram-config/update':
+            # POST: 更新 Telegram 配置
+            bot_token = body.get('bot_token', '').strip()
+            chat_id = body.get('chat_id', '').strip()
+            enabled = body.get('enabled', True)
+            
+            if not bot_token:
+                self.send_json({'ok': False, 'error': 'bot_token 不能为空'}, 400)
+                return
+            if not chat_id:
+                self.send_json({'ok': False, 'error': 'chat_id 不能为空'}, 400)
+                return
+            
+            cfg = {
+                'bot_token': bot_token,
+                'chat_id': chat_id,
+                'enabled': enabled
+            }
+            
+            cfg_path = DATA / 'telegram_push_config.json'
+            cfg_path.parent.mkdir(parents=True, exist_ok=True)
+            cfg_path.write_text(json.dumps(cfg, ensure_ascii=False, indent=2), encoding='utf-8')
+            self.send_json({'ok': True, 'message': 'Telegram 配置已更新', 'config': cfg})
+            return
+
+        if p == '/api/telegram-config/test':
+            # POST: 测试 Telegram 配置
+            result = test_telegram_config()
+            self.send_json(result)
+            return
+
+        if p == '/api/telegram-push':
+            # POST: 手动推送消息到 Telegram
+            message = body.get('message', '').strip()
+            result = push_to_telegram(message if message else None)
+            self.send_json(result)
             return
 
         if p == '/api/add-skill':

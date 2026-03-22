@@ -136,6 +136,26 @@ python server.py
 - **任务事件**: `dashboard/task_events.json`
 - **Token用量**: `dashboard/usage.json`（如有）
 
+### 推送配置（可选）
+
+#### 飞书推送
+```bash
+cp dashboard/morning_brief_config.json.example dashboard/morning_brief_config.json
+# 然后编辑 morning_brief_config.json，填入你的飞书 Webhook 地址
+```
+
+#### Telegram 推送
+```bash
+cp dashboard/telegram_push_config.json.example dashboard/telegram_push_config.json
+# 然后通过 API 配置：
+curl -X POST http://localhost:7891/api/telegram-config/update \
+  -H "Content-Type: application/json" \
+  -d '{"bot_token":"你的BotToken","chat_id":"你的ChatID"}'
+```
+
+获取 Telegram Bot Token：搜索 @BotFather
+获取 Chat ID：搜索 @userinfobot 或把机器人拉进群后访问 getUpdates
+
 ---
 
 ## 文件结构
